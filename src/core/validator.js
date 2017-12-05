@@ -8,7 +8,7 @@ import Config from '../config';
 
 const RULES: { [string]: Rule } = {};
 let STRICT_MODE: boolean = true;
-const DICTIONARY: Dictionary = Config.dependency('dictionary');
+const DICTIONARY: IDictionary = Config.dependency('dictionary');
 
 export default class Validator {
   strict: boolean;
@@ -78,7 +78,11 @@ export default class Validator {
    * Setter for the validator locale.
    */
   set locale (value: string) {
+    const changed = this.locale !== value;
     Validator.locale = value;
+    if (this.errors.count() && changed) {
+      this.errors.regenerate();
+    }
   }
 
   /**
@@ -519,7 +523,10 @@ export default class Validator {
             field: field.name,
             msg: this._formatErrorMessage(field, rule, data, targetName),
             rule: rule.name,
-            scope: field.scope
+            scope: field.scope,
+            regenerate: () => {
+              return this._formatErrorMessage(field, rule, data, targetName);
+            }
           }
         };
       });
@@ -536,7 +543,10 @@ export default class Validator {
         field: field.name,
         msg: this._formatErrorMessage(field, rule, result.data, targetName),
         rule: rule.name,
-        scope: field.scope
+        scope: field.scope,
+        regenerate: () => {
+          return this._formatErrorMessage(field, rule, result.data, targetName);
+        }
       }
     };
   }
